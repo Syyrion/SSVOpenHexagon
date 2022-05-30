@@ -76,13 +76,19 @@ auto makeLuaAccessor(Lua::LuaContext& lua, T& obj, const std::string& prefix)
 static void initRandom(Lua::LuaContext& lua, random_number_generator& rng)
 {
     const auto rndReal = [&rng]() -> float
-    { return rng.get_real<float>(0, 1); };
+    {
+        return rng.get_real<float>(0, 1);
+    };
 
     const auto rndIntUpper = [&rng](int upper) -> float
-    { return rng.get_int<int>(1, upper); };
+    {
+        return rng.get_int<int>(1, upper);
+    };
 
     const auto rndInt = [&rng](int lower, int upper) -> float
-    { return rng.get_int<int>(lower, upper); };
+    {
+        return rng.get_int<int>(lower, upper);
+    };
 
     addLuaFn(lua, "u_rndReal", rndReal)
         .doc("Return a random real number in the [0; 1] range.");
@@ -139,9 +145,12 @@ static void initRandom(Lua::LuaContext& lua, random_number_generator& rng)
 static void redefineIoOpen(Lua::LuaContext& lua)
 try
 {
-    lua.executeCode(
-        "local open = io.open; io.open = function(filename, mode) return "
-        "open(filename, mode == \"rb\" and mode or \"r\"); end");
+    lua.executeCode(R"(
+        local open = io.open
+        io.open = function(filename, mode)
+            return open(filename, mode == \"rb\" and mode or \"r\")
+        end
+    )");
 }
 catch(...)
 {
@@ -154,16 +163,17 @@ catch(...)
 static void redefineRandom(Lua::LuaContext& lua)
 try
 {
-    lua.executeCode(R"(math.random = function(a, b)
-    if a == nil and b == nil then
-        return u_rndSwitch(0, 0, 0)
-    elseif b == nil then
-        return u_rndSwitch(1, 0, a)
-    else
-        return u_rndSwitch(2, a, b)
-    end
-end
-)");
+    lua.executeCode(R"(
+        math.random = function(a, b)
+            if a == nil and b == nil then
+                return u_rndSwitch(0, 0, 0)
+            elseif b == nil then
+                return u_rndSwitch(1, 0, a)
+            else
+                return u_rndSwitch(2, a, b)
+            end
+        end
+    )");
 }
 catch(...)
 {
@@ -243,6 +253,7 @@ static void initUtils(Lua::LuaContext& lua, const bool inMenu)
 
 static void initCustomWalls(Lua::LuaContext& lua, CCustomWallManager& cwManager)
 {
+
     addLuaFn(lua, "cw_create", //
         [&cwManager]() -> CCustomWallHandle
         { return cwManager.create([](CCustomWall&) {}); })
