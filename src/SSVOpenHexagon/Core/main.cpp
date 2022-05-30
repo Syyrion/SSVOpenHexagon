@@ -40,8 +40,6 @@
 #include <unordered_set>
 #include <vector>
 
-//
-//
 // ----------------------------------------------------------------------------
 // Floating-point sanity checks
 // ----------------------------------------------------------------------------
@@ -52,8 +50,7 @@ static_assert(std::numeric_limits<float>::digits == 24);
 static_assert(std::numeric_limits<double>::is_iec559);
 static_assert(std::numeric_limits<double>::digits == 53);
 
-//
-//
+
 // ----------------------------------------------------------------------------
 // Utilities
 // ----------------------------------------------------------------------------
@@ -75,9 +72,13 @@ void createFolderIfNonExistant(const std::string& folderName)
     createFolder(path);
 }
 
+
+// Arguments structure
 struct ParsedArgs
 {
+    // A vector of strings (like an array)
     std::vector<std::string> args;
+    // Optional string values
     std::optional<std::string> cliLevelName;
     std::optional<std::string> cliLevelPack;
     bool printLuaDocs{false};
@@ -85,6 +86,8 @@ struct ParsedArgs
     bool server{false};
 };
 
+// Returns a ParsedArgs struct
+// Return values cannot be discarded
 [[nodiscard]] ParsedArgs parseArgs(const int argc, char* argv[])
 {
     ParsedArgs result;
@@ -128,6 +131,7 @@ struct ParsedArgs
             continue;
         }
 
+        // * emplace_back adds a value to the end of a vector
         result.args.emplace_back(argv[i]);
     }
 
@@ -156,8 +160,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
 
 } // namespace
 
-//
-//
 // ----------------------------------------------------------------------------
 // Print lua docs entrypoint
 // ----------------------------------------------------------------------------
@@ -225,10 +227,8 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
     return 0;
 }
 
-//
-//
 // ----------------------------------------------------------------------------
-// Client main entrypoint
+// * CLIENT MAIN ENTRYPOINT
 // ----------------------------------------------------------------------------
 
 [[nodiscard]] int mainClient(const bool headless,
@@ -238,6 +238,7 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
 {
     // ------------------------------------------------------------------------
     // Steam integration
+    // * Starts steam stuff.
     hg::Steam::steam_manager steamManager;
 
     if(steamManager.is_initialized())
@@ -247,8 +248,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         steamManager.run_callbacks();
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Discord integration
     std::optional<hg::Discord::discord_manager> discordManager;
@@ -258,15 +257,11 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         discordManager.emplace();
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Create game folders if needed
     createFolderIfNonExistant("Profiles/");
     createFolderIfNonExistant("Replays/");
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Load configuration (and overrides)
     hg::Config::loadConfig(args);
@@ -278,10 +273,9 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         ssvu::lo("::main") << "Done saving config\n";
     });
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Create the game window
+    // * Game window is a class contained in GameWindow.hpp
     std::optional<ssvs::GameWindow> window;
 
     if(!headless)
@@ -337,8 +331,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         }
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Initialize IMGUI
     if(!headless)
@@ -361,8 +353,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         ssvu::lo("::main") << "Done shutting down ImGui...\n";
     });
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Initialize assets
     hg::HGAssets assets{&steamManager, headless};
@@ -372,8 +362,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         ssvu::lo("::main") << "Done saving all local profiles\n";
     });
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Initialize audio
     hg::Audio audio{
@@ -392,8 +380,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
     hg::HexagonClient hc{
         steamManager, hg::Config::getServerIp(), hg::Config::getServerPort()};
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Initialize hexagon game
     hg::HexagonGame hg{
@@ -405,8 +391,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         &hc                                                        //
     };
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Initialize menu game and link to hexagon game
     std::optional<hg::MenuGame> mg;
@@ -447,8 +431,6 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         };
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Load drag & drop replay, if any -- otherwise run game as normal
     const std::optional<std::string> compressedReplayFilename =
@@ -566,13 +548,12 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         }
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Run the game!
     if(!headless)
     {
         SSVOH_ASSERT(window.has_value());
+        // * Start the main game loop
         window->run();
     }
 
@@ -580,34 +561,31 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
     return 0;
 }
 
-//
-//
 // ----------------------------------------------------------------------------
-// Program main entrypoint
+// * PROGRAM ENTRYPOINT
 // ----------------------------------------------------------------------------
 
 int main(int argc, char* argv[])
 {
+    // Check if there's an executable
     if(argc < 1)
     {
         std::cerr << "Fatal error: no executable specified" << std::endl;
         return -1;
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // libsodium initialization
+    // ? Not sure what libsodium is, figure out later...
     if(sodium_init() < 0)
     {
         ssvu::lo("::main") << "Failed initializing libsodium\n";
         return 1;
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Basic signal handling
+    // ? This seems like something related to system stuff. Ignore for now...
     // TODO (P2): UB
     std::signal(SIGINT,
         [](int s)
@@ -618,10 +596,11 @@ int main(int argc, char* argv[])
             std::exit(1);
         });
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Flush and save log (at the end of the scope)
+    // * Whatever is passed to the scope guard is guaranteed to be executed
+    // * when the scope guard goes out of scope, including in case of a thrown
+    // * exception.
     HG_SCOPE_GUARD({
         ssvu::lo("::main") << "Saving log to 'log.txt'...\n";
 
@@ -631,42 +610,39 @@ int main(int argc, char* argv[])
         ssvu::lo("::main") << "Done saving log to 'log.txt'\n";
     });
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Set working directory to current executable location
+    // * Definitely important. Might be helpful later.
     std::filesystem::current_path(std::filesystem::path{argv[0]}.parent_path());
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Parse command line arguments
+    // * Runs parseArgs function
+    // * This function returns a structure. Then it's values get unpacked
     const auto [args, cliLevelName, cliLevelPack, printLuaDocs, headlessB,
         server] = parseArgs(argc, argv);
     const auto headless = headlessB; // Workaround binding capture
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Print Lua docs mode
+    // * Is run if -printLuaDocs flag is used
     if(printLuaDocs)
     {
         return mainPrintLuaDocs();
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Server mode
+    // * Enters server mode. Ignore for now...
     if(server)
     {
         return mainServer();
     }
 
-    //
-    //
     // ------------------------------------------------------------------------
     // Client mode
+    // * Start the client!
+
     SSVOH_ASSERT(!printLuaDocs);
     SSVOH_ASSERT(!server);
     return mainClient(headless, args, cliLevelName, cliLevelPack);
