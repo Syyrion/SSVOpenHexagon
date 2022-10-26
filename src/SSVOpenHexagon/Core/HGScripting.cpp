@@ -16,6 +16,7 @@
 #include "SSVOpenHexagon/Global/Assets.hpp"
 #include "SSVOpenHexagon/Global/Audio.hpp"
 #include "SSVOpenHexagon/Global/Config.hpp"
+#include "SSVOpenHexagon/Global/Macros.hpp"
 
 #include "SSVOpenHexagon/Utils/Concat.hpp"
 #include "SSVOpenHexagon/Utils/LuaMetadata.hpp"
@@ -42,7 +43,7 @@ Utils::LuaMetadataProxy addLuaFn(
     Lua::LuaContext& lua, const std::string& name, F&& f)
 {
     // TODO (P2): reduce instantiations by using captureless lambdas
-    lua.writeVariable(name, std::forward<F>(f));
+    lua.writeVariable(name, SSVOH_FWD(f));
     return Utils::LuaMetadataProxy{
         Utils::TypeWrapper<F>{}, LuaScripting::getMetadata(), name};
 }
@@ -168,15 +169,6 @@ void HexagonGame::initLua_Utils()
         .doc(
             "Force-swaps (180 degrees) the player when invoked. If `$0` is "
             "`true`, the swap sound will be played.");
-
-    // TODO (P0): repetition
-    addLuaFn(lua, "u_getWidth", //
-        [] { return Config::getWidth(); })
-        .doc("TODO");
-
-    addLuaFn(lua, "u_getHeight", //
-        [] { return Config::getHeight(); })
-        .doc("TODO");
 }
 
 void HexagonGame::initLua_AudioControl()
@@ -1083,6 +1075,23 @@ void HexagonGame::initLua_Deprecated()
             "Remove all previously scheduled messages. "
             "**This function is deprecated and will be removed in a future "
             "version. Please use e_clearMessages instead!**");
+
+    addLuaFn(lua, "l_forceSetPulse",
+        [this](const float mValue)
+        {
+            status.pulse = mValue;
+            refreshPulse();
+        })
+        .doc("Immediately sets the current pulse value to `$0`.");
+
+    addLuaFn(lua, "l_forceSetBeatPulse",
+        [this](const float mValue)
+        {
+            status.beatPulse = mValue;
+            refreshBeatPulse();
+            player.updatePosition(status.radius);
+        })
+        .doc("Immediately sets the current beat pulse value to `$0`.");
 }
 
 void HexagonGame::initLua()

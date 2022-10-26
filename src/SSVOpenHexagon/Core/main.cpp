@@ -29,6 +29,8 @@
 #include <SSVUtils/Core/Log/Log.inl>
 #include <SSVUtils/Core/FileSystem/FileSystem.hpp>
 
+#include <SFML/Graphics/Image.hpp>
+
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -214,10 +216,11 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
         nullptr /* client */          //
     };
 
+    // TODO (P0): handle `resolve` errors
     hg::HexagonServer hs{
         assets,                                                          //
         hg,                                                              //
-        hg::Config::getServerIp(),                                       //
+        sf::IpAddress::resolve(hg::Config::getServerIp()).value(),       //
         hg::Config::getServerPort(),                                     //
         hg::Config::getServerControlPort(),                              //
         hg::Utils::toUnorderedSet(hg::Config::getServerLevelWhitelist()) //
@@ -298,10 +301,11 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
                 if(!icon.loadFromFile("Assets/icon.png"))
                 {
                     ssvu::lo("::main") << "Failed to load icon image\n";
+                    return;
                 }
 
                 window->getRenderWindow().setIcon(
-                    icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+                    {icon.getSize().x, icon.getSize().y}, icon.getPixelsPtr());
             };
 
             window->onRecreation += resetIcon;
@@ -377,8 +381,10 @@ getFirstCompressedReplayFilenameFromArgs(const std::vector<std::string>& args)
 
     // ------------------------------------------------------------------------
     // Initialize hexagon client
-    hg::HexagonClient hc{
-        steamManager, hg::Config::getServerIp(), hg::Config::getServerPort()};
+    // TODO (P0): handle `resolve` errors
+    hg::HexagonClient hc{steamManager,
+        sf::IpAddress::resolve(hg::Config::getServerIp()).value(),
+        hg::Config::getServerPort()};
 
     // ------------------------------------------------------------------------
     // Initialize hexagon game

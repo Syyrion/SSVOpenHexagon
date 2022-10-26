@@ -6,6 +6,8 @@
 
 #include "SSVOpenHexagon/Global/Assert.hpp"
 #include "SSVOpenHexagon/Global/Assets.hpp"
+#include "SSVOpenHexagon/Global/Config.hpp"
+#include "SSVOpenHexagon/Global/Macros.hpp"
 #include "SSVOpenHexagon/Global/Version.hpp"
 
 #include "SSVOpenHexagon/Utils/LuaWrapper.hpp"
@@ -46,7 +48,7 @@ Utils::LuaMetadataProxy addLuaFn(
     // TODO (P2): does this handle duplicates properly? Both menu and game call
     // the same thing.
 
-    lua.writeVariable(name, std::forward<F>(f));
+    lua.writeVariable(name, SSVOH_FWD(f));
     return Utils::LuaMetadataProxy{
         Utils::TypeWrapper<F>{}, getMetadata(), name};
 }
@@ -1491,8 +1493,6 @@ static void initShaders(Lua::LuaContext& lua, HGAssets& assets,
     // ------------------------------------------------------------------------
     // Fragment shader binding
 
-    // TODO (P0): docs
-
     addLuaFn(lua, "shdr_resetAllActiveFragmentShaders",
         [&hexagonGameStatus]()
         {
@@ -1503,7 +1503,8 @@ static void initShaders(Lua::LuaContext& lua, HGAssets& assets,
             {
                 ids[i] = std::nullopt;
             }
-        });
+        })
+        .doc("Reset all active fragment shaders in all render stages.");
 
     addLuaFn(lua, "shdr_resetActiveFragmentShader",
         [checkValidRenderStage, &hexagonGameStatus](
@@ -1518,7 +1519,9 @@ static void initShaders(Lua::LuaContext& lua, HGAssets& assets,
             }
         })
         .arg("renderStage")
-        .doc("TODO");
+        .doc(
+            "Reset the currently active fragment shader for the render stage "
+            "`$0`.");
 
     addLuaFn(lua, "shdr_setActiveFragmentShader",
         [checkValidRenderStage, &hexagonGameStatus](
@@ -1534,7 +1537,20 @@ static void initShaders(Lua::LuaContext& lua, HGAssets& assets,
         })
         .arg("renderStage")
         .arg("shaderId")
-        .doc("TODO");
+        .doc(
+            "Set the currently active fragment shader for the render stage "
+            "`$0` to the shader with id `$1`.");
+}
+
+static void initConfig(Lua::LuaContext& lua)
+{
+    addLuaFn(lua, "u_getWidth", //
+        [] { return Config::getWidth(); })
+        .doc("Return the width of the game window in pixels.");
+
+    addLuaFn(lua, "u_getHeight", //
+        [] { return Config::getHeight(); })
+        .doc("Return the height of the game window in pixels.");
 }
 
 [[nodiscard]] Utils::LuaMetadata& getMetadata()
@@ -1568,6 +1584,7 @@ void init(Lua::LuaContext& lua, random_number_generator& rng, const bool inMenu,
         fPackPathGetter, fGetPackData);
     initShaders(lua, assets, execScriptPackPathContext, fPackPathGetter,
         fGetPackData, hexagonGameStatus);
+    initConfig(lua);
 }
 
 void printDocs()

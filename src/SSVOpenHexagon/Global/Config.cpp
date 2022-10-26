@@ -5,7 +5,6 @@
 #include "SSVOpenHexagon/Global/Config.hpp"
 
 #include "SSVOpenHexagon/Global/UtilsJson.hpp"
-#include "SSVOpenHexagon/Utils/Concat.hpp"
 #include "SSVOpenHexagon/Utils/String.hpp"
 #include "SSVOpenHexagon/Utils/Casts.hpp"
 #include "SSVOpenHexagon/Core/Joystick.hpp"
@@ -16,6 +15,11 @@
 #include <SSVStart/Utils/Input.hpp>
 #include <SSVStart/Input/Input.hpp>
 #include <SSVStart/GameSystem/GameWindow.hpp>
+
+#include <SFML/Window/VideoMode.hpp>
+#include <SFML/Window/Joystick.hpp>
+
+#include <SFML/System/Vector2.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -296,9 +300,10 @@ namespace hg::Config {
     return res;
 }
 
-
+#if defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wbraced-scalar-init"
+#endif
 
 #define X(name, type, key, ...)                                               \
     [[nodiscard]] static auto& name() noexcept                                \
@@ -309,7 +314,9 @@ namespace hg::Config {
 X_LINKEDVALUES
 #undef X
 
+#if defined(__clang__)
 #pragma GCC diagnostic pop
+#endif
 
 static void fixupMissingTriggers()
 {
@@ -376,16 +383,16 @@ std::string uneligibilityReason;
 
 static void applyAutoWindowedResolution()
 {
-    auto d(sf::VideoMode::getDesktopMode());
-    windowedWidth() = d.width;
-    windowedHeight() = d.height;
+    auto d = sf::VideoMode::getDesktopMode();
+    windowedWidth() = d.size.x;
+    windowedHeight() = d.size.y;
 }
 
 static void applyAutoFullscreenResolution()
 {
-    auto d(sf::VideoMode::getDesktopMode());
-    fullscreenWidth() = d.width;
-    fullscreenHeight() = d.height;
+    auto d = sf::VideoMode::getDesktopMode();
+    fullscreenWidth() = d.size.x;
+    fullscreenHeight() = d.size.y;
 }
 
 void loadConfig(const std::vector<std::string>& mOverridesIds)
